@@ -8,31 +8,44 @@ import java.util.List;
 /**
  * Global match ledger.
  *
- * Starter implementation is intentionally NOT thread-safe.
+ * Thread safety: {@code totalCrafted} and {@code events} are always read and
+ * written while holding {@code lock}. Both are updated inside the same critical
+ * section, so no thread can ever observe the counter and the event list
+ * disagreeing with each other.
+ *
+ * The lock guards this object only. Adventurers keep crafting concurrently at
+ * their forge stations and meet here just long enough to write one entry.
  */
 public final class ForgeLedger {
+
+    /** Private so no other class can lock on this ledger and interfere. */
+    private final Object lock = new Object();
+
     private int totalCrafted = 0;
     private final List<ForgeEvent> events = new ArrayList<>();
 
     public void record(ForgeEvent event) {
-        // TODO LAB 3: ++ is a read-modify-write operation and ArrayList is not
-        // designed for concurrent writes. Fix both responsibilities without
-        // serializing the entire game behind one global monitor.
-        int next = totalCrafted + 1;
-        Thread.yield();
-        totalCrafted = next;
-        events.add(event);
+        synchronized (lock) {
+            totalCrafted++;
+            events.add(event);
+        }
     }
 
     public int totalCrafted() {
-        return totalCrafted;
+        synchronized (lock) {
+            return totalCrafted;
+        }
     }
 
     public int eventCount() {
-        return events.size();
+        synchronized (lock) {
+            return events.size();
+        }
     }
 
     public List<ForgeEvent> snapshot() {
-        return List.copyOf(events);
+        synchronized (lock) {
+            return List.copyOf(events);
+        }
     }
 }

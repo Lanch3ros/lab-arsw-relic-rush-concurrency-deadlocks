@@ -529,10 +529,117 @@ cached values it had before.
 
 ## 3. Thread-safety problems
 
+### 3.1 The two problems
+
 | Shared state | Problem | Invariant at risk | Solution | Why this solution? |
 |---|---|---|---|---|
-| | | | | |
-| | | | | |
+| `totalCrafted` (an `int`) | `totalCrafted + 1` is three separate steps: read, add, write back. Two threads can both read 41 and both write 42, so one relic disappears. | `ledger == scoreSum` | Increment it inside a lock | The lock makes the three steps behave as one, so no thread can read a value that another is about to overwrite |
+| `events` (an `ArrayList`) | `ArrayList` was never built for two threads writing at the same time. Entries get lost, and in the worst case the internal array is left broken. | `events == scoreSum` | Add to it inside the **same** lock | Using the same lock also keeps the counter and the list in step with each other |
+
+Section 1 measured both: the counter lost 94-97 % of its increments and the list
+lost 6-7 %, in 6 runs out of 6.
+
+### 3.2 What we changed
+
+The whole fix is in
+[`ForgeLedger`](../src/main/java/edu/eci/arsw/relicrush/concurrency/ForgeLedger.java).
+No other class was touched.
+
+```java
+private final Object lock = new Object();
+
+public void record(ForgeEvent event) {
+    synchronized (lock) {
+        totalCrafted++;
+        events.add(event);
+    }
+}
+```
+
+The read methods (`totalCrafted()`, `eventCount()`, `snapshot()`) take the same
+lock, so a reader always sees finished writes rather than a half-updated value.
+
+The lock object is **private**, so no other class can lock on the ledger and
+interfere with it by accident.
+
+### 3.3 Why both updates share one lock
+
+This is the important design decision, and it is what the invariant actually
+demands.
+
+The invariant is not "the counter is correct" and "the list is correct" as two
+separate statements. It is **"the counter and the list agree with each other."**
+
+If we protected them separately - an `AtomicInteger` for the counter and a
+thread-safe list for the events - each one would be individually correct, but
+`record` would still update them in two steps. In between those two steps, the
+counter says 5 while the list says 4. Anyone reading at that moment sees a broken
+invariant even though nothing was lost.
+
+Putting both lines inside one lock makes them a **single indivisible step**. There
+is no in-between moment for anyone to observe.
+
+In this game a reader would probably never catch that gap anyway, because the
+coordinator only reads at the barrier when no one is writing (section 2.4). But
+that would make the ledger correct *because of how it happens to be called*, not
+because of how it is written. Our version stays correct even if someone later reads
+it in the middle of a round.
+
+### 3.4 Why this is better than locking the whole game
+
+The lab forbids solving the problem with one global lock, and for good reason.
+
+A global lock would mean only one adventurer could do anything at a time: pick
+stations, craft, and record. The game would still print the right numbers, but it
+would no longer be concurrent - it would be a sequential program with extra
+threads. Every quality attribute the lab cares about would be lost.
+
+Our lock is much narrower:
+
+|                                       | Global lock                                            | Our ledger lock                       |
+|---------------------------------------|--------------------------------------------------------|---------------------------------------|
+| What it covers                        | the entire craft operation                             | two lines of bookkeeping              |
+| Adventurers crafting at the same time | 1                                                      | as many as have free stations         |
+| Time spent holding the lock           | the whole turn, including the 2 ms delay in `LockPair` | a counter increment and a list append |
+
+Adventurers still compete for forge stations exactly as before, still craft in
+parallel, and only meet at the ledger for the brief moment it takes to write one
+line. The stations remain the thing that limits concurrency - which is the point of
+the game - rather than the scoreboard.
+
+### 3.5 A note on the removed `Thread.yield()`
+
+The starter had a `Thread.yield()` sitting between reading and writing the counter.
+It was there to make the race easy to reproduce, and it is gone in our version:
+holding a lock while inviting the scheduler to switch threads would slow every
+craft down for no benefit.
+
+Removing it does not hide anything. The `yield()` sat **before** `events.add(...)`
+and never affected it, yet the list still lost 6-7 % of its entries in every
+baseline run. That loss came from ordinary concurrent execution with no artificial
+help. The race was real; the `yield()` only made the counter's share of it easier
+to see.
+
+The fix does not depend on timing at all. The lock makes the lost update
+*impossible*, not merely unlikely.
+
+### 3.6 Verification
+
+```text
+❯ java -cp target/classes edu.eci.arsw.relicrush.app.LedgerRaceProbe
+expected=64000 totalCrafted=64000 eventCount=64000 invariant=OK
+❯ java -cp target/classes edu.eci.arsw.relicrush.app.LedgerRaceProbe
+expected=64000 totalCrafted=64000 eventCount=64000 invariant=OK
+❯ java -cp target/classes edu.eci.arsw.relicrush.app.LedgerRaceProbe
+expected=64000 totalCrafted=64000 eventCount=64000 invariant=OK
+
+❯ java -cp target/classes edu.eci.arsw.relicrush.app.LedgerRaceProbe 64 5000
+expected=320000 totalCrafted=320000 eventCount=320000 invariant=OK
+❯ java -cp target/classes edu.eci.arsw.relicrush.app.LedgerRaceProbe 64 5000
+expected=320000 totalCrafted=320000 eventCount=320000 invariant=OK
+❯ java -cp target/classes edu.eci.arsw.relicrush.app.LedgerRaceProbe 64 5000
+expected=320000 totalCrafted=320000 eventCount=320000 invariant=OK
+```
 
 ## 4. Deadlock diagnosis
 
