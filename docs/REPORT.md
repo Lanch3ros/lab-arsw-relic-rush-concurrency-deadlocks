@@ -302,12 +302,230 @@ failure modes, not just the one that is easier to observe.
 
 ## 2. Coordination analysis
 
-Explain the responsibility of both barriers:
+The round coordination is the one part of the starter that is **already correct**,
+and the README asks that it be understood before anything else is modified. This
+section answers the four questions of Part I.
 
-- `roundStart`:
-- `roundEnd`:
+### 2.1 The model at a glance
 
-Why is `Thread.sleep(...)` not a valid replacement for a barrier?
+`GameEngine` creates two barriers, each with **`adventurers() + 1`** parties
+([`GameEngine.java:27-28`](../src/main/java/edu/eci/arsw/relicrush/game/GameEngine.java#L27)):
+
+```java
+this.roundStart = new CyclicBarrier(config.adventurers() + 1);
+this.roundEnd   = new CyclicBarrier(config.adventurers() + 1);
+```
+
+The `+ 1` is the coordinator itself. It is not a spectator polling from outside -
+**it is a participant in both barriers**, which is what allows it to pace the game
+and to observe between rounds. The two loops are mirror images:
+
+| Coordinator ([`GameEngine.java:45-53`](../src/main/java/edu/eci/arsw/relicrush/game/GameEngine.java#L45)) | Adventurer ([`Adventurer.java:55-59`](../src/main/java/edu/eci/arsw/relicrush/game/Adventurer.java#L55)) |
+|---|---|
+| `roundStart.await()` | `roundStart.await()` |
+| `roundEnd.await()` | `playTurn(round)` |
+| `printRoundSnapshot(round)` | `roundEnd.await()` |
+
+Note that the coordinator does **no work** between the two barriers, and the
+worker does **all** of its work there. That asymmetry is the whole design.
+
+```text
+                 roundStart             roundEnd                     roundStart
+                (N+1 parties)          (N+1 parties)                 (next round)
+                     |                      |                             |
+coordinator  --------#----------------------#--- printRoundSnapshot ------#------>
+                     |                      |     (game state frozen)     |
+adventurer-1 --------#---- playTurn(R) -----#--- (parked at barrier) -----#------>
+adventurer-2 --------#------ playTurn(R) ---#--- (parked at barrier) -----#------>
+adventurer-N --------#-- playTurn(R) -------#--- (parked at barrier) -----#------>
+                     |                      |                             |
+                 all released           all released              coordinator
+                 together               together                  re-opens gate
+```
+
+### 2.2 What problem does `roundStart` solve?
+
+**It solves the staggered-start problem.**
+
+`Thread.start()` returns immediately; it does not mean the thread is running. When
+`GameEngine` calls `adventurers.forEach(Thread::start)`
+([`GameEngine.java:43`](../src/main/java/edu/eci/arsw/relicrush/game/GameEngine.java#L43)),
+the operating system is free to schedule those threads whenever it likes, in any
+order, with arbitrary delays between them. On a 10-core machine running 128
+adventurers, most of them are not even on a CPU yet.
+
+Without a start gate, adventurer-1 could complete several rounds before
+adventurer-8 executes its first instruction. "Round 7" would then mean different
+things to different threads, and the per-round snapshot would be meaningless
+because there would be no shared notion of *which round is in progress*.
+
+`roundStart` converts N independent thread start-ups into **one aligned event**:
+no adventurer enters round R until all N adventurers *and* the coordinator have
+arrived. It also gives the coordinator a throttle - because the coordinator is a
+party, the round cannot begin until the coordinator releases it.
+
+
+### 2.3 What problem does `roundEnd` solve?
+
+**It solves the read-while-writing problem.**
+
+The coordinator must not read the scoreboard while adventurers are still crafting.
+`printRoundSnapshot`
+([`GameEngine.java:86-98`](../src/main/java/edu/eci/arsw/relicrush/game/GameEngine.java))
+performs three separate reads:
+
+```java
+int scoreSum   = adventurers.stream().mapToInt(Adventurer::score).sum();
+int ledgerTotal = ledger.totalCrafted();
+int eventCount  = ledger.eventCount();
+```
+
+If workers were still running, these reads would sweep across a moving target: some
+players would have completed round R, others not, and `scoreSum` would be a **torn
+read** of a state that never actually existed at any single instant. The invariant
+check would then report `BROKEN` constantly - not because of the ledger race, but
+because the observer was reading a game in motion.
+
+`roundEnd` guarantees that when the coordinator returns from `await()`, **every**
+worker has returned from `playTurn(round)`. The snapshot describes one well-defined
+instant.
+
+### 2.4 Why *two* barriers: the quiescent window
+
+The subtle part is what the two barriers achieve *together*, which neither achieves
+alone. Trace what happens the moment `roundEnd` trips:
+
+1. All N+1 parties are released simultaneously.
+2. Each worker loops back and calls `roundStart.await()` for round R+1 - and
+   **blocks**, because only N parties have arrived and the barrier needs N+1.
+3. The coordinator, meanwhile, is running `printRoundSnapshot(round)`.
+4. Only when the coordinator finishes printing does it reach `roundStart.await()`,
+   supplying the final party and releasing round R+1.
+
+So while the snapshot is being taken, **every adventurer is parked at a barrier and
+none can touch `score` or the ledger**: `playTurn` is unreachable until `roundStart`
+trips, and `roundStart` cannot trip without the coordinator.
+
+This is a **mutual-exclusion window created without a single lock.** The coordinator
+reads shared state with no synchronisation of its own and is nonetheless safe,
+because the barrier pair has made the rest of the system quiescent. That is why
+`printRoundSnapshot` contains no `synchronized` block and needs none.
+
+### 2.5 Why `Thread.sleep(...)` is not a valid replacement
+
+Replacing `roundEnd.await()` with something like `Thread.sleep(50)` fails on four
+independent grounds. Any one of them alone would be disqualifying.
+
+**1. It guarantees nothing about completion.** A sleep is a *bet on timing*, not a
+statement about work. If any adventurer needs 60 ms - because of a GC pause, a
+scheduler decision, contention on a station, or simply 128 threads sharing 10 cores
+- the coordinator reads early and prints a snapshot of an unfinished round. Worse,
+**nothing detects this**: the program does not fail, it silently reports wrong
+numbers. A barrier cannot be early, because it waits on the *event* (all parties
+arrived), not on the *clock*.
+
+**2. It guarantees nothing about visibility.** `Thread.sleep` establishes **no
+happens-before relationship whatsoever**. Even if every worker has genuinely
+finished, the Java Memory Model still permits the coordinator to observe stale
+values indefinitely, because `Adventurer.score` is a plain non-`volatile` `int`
+read without synchronisation. Sleeping longer does not help: this is a correctness
+property of the memory model, not a race that more time can win. This point is
+developed in section 2.6.
+
+**3. It is a permanent performance tax.** To be even probabilistically safe, the
+constant must cover the *worst plausible* turn, so every round pays the worst case
+even when all workers finished in 2 ms. Over 100 rounds that is pure waste, and it
+grows with the safety margin. The barrier costs approximately the *actual* duration
+of the slowest worker and not one millisecond more.
+
+**4. It is unportable and does not scale.** The "right" constant depends on core
+count, machine load, JIT warm-up, player count and station count. A value tuned on
+this laptop is wrong on the grader's machine. Worse, the failure is
+**load-dependent**: it will appear to work at 8 players and break at 128, which is
+precisely the regime the lab requires (README section 13). A barrier needs no
+tuning, because `adventurers + 1` is a structural fact rather than a guess.
+
+The lab makes this explicit in its restrictions: *do not use arbitrary sleeps as a
+coordination mechanism* (README section 16).
+
+> **A sleep expresses a hope; a barrier expresses a guarantee.** A sleep couples
+> correctness to wall-clock timing - the one variable a concurrent program can
+> never control. A barrier couples correctness to the completion event itself.
+
+**A necessary distinction.** The starter does contain `Thread.sleep` calls, and they
+are *not* violations, because neither is used to coordinate game logic:
+
+| Call site                                                                                                                  | Purpose                                                  | Is it coordination?                                                                |
+|----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|------------------------------------------------------------------------------------|
+| `LockPair.sleepQuietly(2)` ([`LockPair.java:22`](../src/main/java/edu/eci/arsw/relicrush/concurrency/LockPair.java))       | widens the deadlock window so the defect is reproducible | No - a **test aid** that makes a latent bug deterministic                          |
+| `Thread.sleep(100)` in the watchdog ([`GameEngine.java:75`](../src/main/java/edu/eci/arsw/relicrush/game/GameEngine.java)) | polling interval of a daemon monitor                     | No - a **sampling period** for an observer that no correctness property depends on |
+| `Thread.sleep(25)` in `DeadlockProbe`                                                                                      | detection polling interval                               | No - same reason                                                                   |
+ 
+Using sleep to *sample* or to *provoke* is legitimate. Using it to *establish that
+another thread has finished* is not.
+
+### 2.6 What memory-consistency benefit does reading after the barrier give?
+
+The short answer: **the barrier guarantees the coordinator actually sees the
+numbers the workers wrote, instead of old ones.**
+
+This is a different guarantee from the one in section 2.4. There the barrier made
+sure the work was *finished*. Here it makes sure the results are *visible*. Those
+two things are not the same, and it is easy to assume the first implies the second.
+
+**The problem.** Each adventurer keeps its own score
+([`Adventurer.java:25`](../src/main/java/edu/eci/arsw/relicrush/game/Adventurer.java#L25)):
+
+```java
+private int score;          // no volatile, no lock
+```
+
+The adventurer thread writes it. A *different* thread - the coordinator - reads it
+in `printRoundSnapshot`. In Java, when one thread writes an ordinary field and
+another thread reads it with no synchronisation between them, **the reader is not
+promised an up-to-date value**. For speed, each CPU core keeps recently used values
+in its own local cache, and Java allows the reader to keep using its cached copy.
+Waiting longer does not fix this: the reader can keep seeing the old number
+indefinitely, because nothing ever tells it to look again.
+
+**What the barrier does.** `CyclicBarrier` comes with a promise: everything a
+thread did *before* it called `await()` is guaranteed to be visible to the other
+threads *after* they come out of that same barrier.
+
+```text
+worker: score++ and ledger.record(...)        <-- happens before await()
+                    |
+              roundEnd barrier
+                    |
+coordinator: reads score, totalCrafted(), eventCount()   <-- sees all of it
+```
+
+So when the coordinator wakes up from `roundEnd.await()`, it is reading fresh
+values, not stale cached ones.
+
+**Why this matters here.** Three practical consequences:
+
+1. **`score` does not need to be `volatile`.** The barrier already handles making
+   the value visible, so marking the field `volatile` would add cost without adding
+   any guarantee. (The usual instinct is to mark every shared field `volatile` -
+   here it would be unnecessary.)
+
+2. **One barrier covers every worker at once**, and every value each of them wrote
+   during the round - not one field at a time.
+
+3. **It is what makes our evidence believable.** This is the important one for this
+   report. Because the coordinator is guaranteed to read fresh values, every
+   `invariant=BROKEN` line in section 1 shows **real relics being lost inside
+   `ForgeLedger`**. If we were reading through the barrier's guarantee, we could
+   not tell the difference between "the ledger genuinely lost an update" and "the
+   coordinator just looked at an old copy of the number" - and section 1 would
+   prove nothing.
+
+And this is the second reason `Thread.sleep` cannot replace the barrier (section
+2.5): sleeping gives no visibility promise at all. A sleeping thread is simply a
+thread doing nothing; when it wakes up, it may still be looking at the same stale
+cached values it had before.
+
 
 ## 3. Thread-safety problems
 
