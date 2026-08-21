@@ -754,9 +754,452 @@ We maintained concurrency by using fine-grained locking specific to each ForgeSt
 
 | Players | Stations | Rounds | Deadlock? | Invariant result |
 |---:|---:|---:|---|---|
-| 8 | 6 | 50 | | |
-| 32 | 8 | 100 | | |
-| 128 | 8 | 100 | | |
+| 8 | 6 | 50 |No |Ok |
+| 32 | 8 | 100 |No |Ok |
+| 128 | 8 | 100 |No |Ok |
+
+**Evidencia de ejecución (configuración 8 / 6 / 50):**
+java -cp target/classes edu.eci.arsw.relicrush.app.InvariantProbe 8 6 50
+ROUND 01 | scoreSum=8 | ledger=8 | events=8 | invariant=OK
+ROUND 02 | scoreSum=16 | ledger=16 | events=16 | invariant=OK
+ROUND 03 | scoreSum=24 | ledger=24 | events=24 | invariant=OK
+ROUND 04 | scoreSum=32 | ledger=32 | events=32 | invariant=OK
+ROUND 05 | scoreSum=40 | ledger=40 | events=40 | invariant=OK
+ROUND 06 | scoreSum=48 | ledger=48 | events=48 | invariant=OK
+ROUND 07 | scoreSum=56 | ledger=56 | events=56 | invariant=OK
+ROUND 08 | scoreSum=64 | ledger=64 | events=64 | invariant=OK
+ROUND 09 | scoreSum=72 | ledger=72 | events=72 | invariant=OK
+ROUND 10 | scoreSum=80 | ledger=80 | events=80 | invariant=OK
+ROUND 11 | scoreSum=88 | ledger=88 | events=88 | invariant=OK
+ROUND 12 | scoreSum=96 | ledger=96 | events=96 | invariant=OK
+ROUND 13 | scoreSum=104 | ledger=104 | events=104 | invariant=OK
+ROUND 14 | scoreSum=112 | ledger=112 | events=112 | invariant=OK
+ROUND 15 | scoreSum=120 | ledger=120 | events=120 | invariant=OK
+ROUND 16 | scoreSum=128 | ledger=128 | events=128 | invariant=OK
+ROUND 17 | scoreSum=136 | ledger=136 | events=136 | invariant=OK
+ROUND 18 | scoreSum=144 | ledger=144 | events=144 | invariant=OK
+ROUND 19 | scoreSum=152 | ledger=152 | events=152 | invariant=OK
+ROUND 20 | scoreSum=160 | ledger=160 | events=160 | invariant=OK
+ROUND 21 | scoreSum=168 | ledger=168 | events=168 | invariant=OK
+ROUND 22 | scoreSum=176 | ledger=176 | events=176 | invariant=OK
+ROUND 23 | scoreSum=184 | ledger=184 | events=184 | invariant=OK
+ROUND 24 | scoreSum=192 | ledger=192 | events=192 | invariant=OK
+ROUND 25 | scoreSum=200 | ledger=200 | events=200 | invariant=OK
+ROUND 26 | scoreSum=208 | ledger=208 | events=208 | invariant=OK
+ROUND 27 | scoreSum=216 | ledger=216 | events=216 | invariant=OK
+ROUND 28 | scoreSum=224 | ledger=224 | events=224 | invariant=OK
+ROUND 29 | scoreSum=232 | ledger=232 | events=232 | invariant=OK
+ROUND 30 | scoreSum=240 | ledger=240 | events=240 | invariant=OK
+ROUND 31 | scoreSum=248 | ledger=248 | events=248 | invariant=OK
+ROUND 32 | scoreSum=256 | ledger=256 | events=256 | invariant=OK
+ROUND 33 | scoreSum=264 | ledger=264 | events=264 | invariant=OK
+ROUND 34 | scoreSum=272 | ledger=272 | events=272 | invariant=OK
+ROUND 35 | scoreSum=280 | ledger=280 | events=280 | invariant=OK
+ROUND 36 | scoreSum=288 | ledger=288 | events=288 | invariant=OK
+ROUND 37 | scoreSum=296 | ledger=296 | events=296 | invariant=OK
+ROUND 38 | scoreSum=304 | ledger=304 | events=304 | invariant=OK
+ROUND 39 | scoreSum=312 | ledger=312 | events=312 | invariant=OK
+ROUND 40 | scoreSum=320 | ledger=320 | events=320 | invariant=OK
+ROUND 41 | scoreSum=328 | ledger=328 | events=328 | invariant=OK
+ROUND 42 | scoreSum=336 | ledger=336 | events=336 | invariant=OK
+ROUND 43 | scoreSum=344 | ledger=344 | events=344 | invariant=OK
+ROUND 44 | scoreSum=352 | ledger=352 | events=352 | invariant=OK
+ROUND 45 | scoreSum=360 | ledger=360 | events=360 | invariant=OK
+ROUND 46 | scoreSum=368 | ledger=368 | events=368 | invariant=OK
+ROUND 47 | scoreSum=376 | ledger=376 | events=376 | invariant=OK
+ROUND 48 | scoreSum=384 | ledger=384 | events=384 | invariant=OK
+ROUND 49 | scoreSum=392 | ledger=392 | events=392 | invariant=OK
+ROUND 50 | scoreSum=400 | ledger=400 | events=400 | invariant=OK
+
+=== RELIC RUSH - FINAL SCORE ===
+adventurer-1       50 relics
+adventurer-2       50 relics
+adventurer-3       50 relics
+adventurer-4       50 relics
+adventurer-5       50 relics
+adventurer-6       50 relics
+adventurer-7       50 relics
+adventurer-8       50 relics
+Total by players : 400
+Ledger total     : 400
+Ledger events    : 400
+
+**Evidencia de ejecución (configuración 32 / 8 / 100):**
+java -cp target/classes edu.eci.arsw.relicrush.app.InvariantProbe 32 8 100
+ROUND 01 | scoreSum=32 | ledger=32 | events=32 | invariant=OK
+ROUND 02 | scoreSum=64 | ledger=64 | events=64 | invariant=OK
+ROUND 03 | scoreSum=96 | ledger=96 | events=96 | invariant=OK
+ROUND 04 | scoreSum=128 | ledger=128 | events=128 | invariant=OK
+ROUND 05 | scoreSum=160 | ledger=160 | events=160 | invariant=OK
+ROUND 06 | scoreSum=192 | ledger=192 | events=192 | invariant=OK
+ROUND 07 | scoreSum=224 | ledger=224 | events=224 | invariant=OK
+ROUND 08 | scoreSum=256 | ledger=256 | events=256 | invariant=OK
+ROUND 09 | scoreSum=288 | ledger=288 | events=288 | invariant=OK
+ROUND 10 | scoreSum=320 | ledger=320 | events=320 | invariant=OK
+ROUND 11 | scoreSum=352 | ledger=352 | events=352 | invariant=OK
+ROUND 12 | scoreSum=384 | ledger=384 | events=384 | invariant=OK
+ROUND 13 | scoreSum=416 | ledger=416 | events=416 | invariant=OK
+ROUND 14 | scoreSum=448 | ledger=448 | events=448 | invariant=OK
+ROUND 15 | scoreSum=480 | ledger=480 | events=480 | invariant=OK
+ROUND 16 | scoreSum=512 | ledger=512 | events=512 | invariant=OK
+ROUND 17 | scoreSum=544 | ledger=544 | events=544 | invariant=OK
+ROUND 18 | scoreSum=576 | ledger=576 | events=576 | invariant=OK
+ROUND 19 | scoreSum=608 | ledger=608 | events=608 | invariant=OK
+ROUND 20 | scoreSum=640 | ledger=640 | events=640 | invariant=OK
+ROUND 21 | scoreSum=672 | ledger=672 | events=672 | invariant=OK
+ROUND 22 | scoreSum=704 | ledger=704 | events=704 | invariant=OK
+ROUND 23 | scoreSum=736 | ledger=736 | events=736 | invariant=OK
+ROUND 24 | scoreSum=768 | ledger=768 | events=768 | invariant=OK
+ROUND 25 | scoreSum=800 | ledger=800 | events=800 | invariant=OK
+ROUND 26 | scoreSum=832 | ledger=832 | events=832 | invariant=OK
+ROUND 27 | scoreSum=864 | ledger=864 | events=864 | invariant=OK
+ROUND 28 | scoreSum=896 | ledger=896 | events=896 | invariant=OK
+ROUND 29 | scoreSum=928 | ledger=928 | events=928 | invariant=OK
+ROUND 30 | scoreSum=960 | ledger=960 | events=960 | invariant=OK
+ROUND 31 | scoreSum=992 | ledger=992 | events=992 | invariant=OK
+ROUND 32 | scoreSum=1024 | ledger=1024 | events=1024 | invariant=OK
+ROUND 33 | scoreSum=1056 | ledger=1056 | events=1056 | invariant=OK
+ROUND 34 | scoreSum=1088 | ledger=1088 | events=1088 | invariant=OK
+ROUND 35 | scoreSum=1120 | ledger=1120 | events=1120 | invariant=OK
+ROUND 36 | scoreSum=1152 | ledger=1152 | events=1152 | invariant=OK
+ROUND 37 | scoreSum=1184 | ledger=1184 | events=1184 | invariant=OK
+ROUND 38 | scoreSum=1216 | ledger=1216 | events=1216 | invariant=OK
+ROUND 39 | scoreSum=1248 | ledger=1248 | events=1248 | invariant=OK
+ROUND 40 | scoreSum=1280 | ledger=1280 | events=1280 | invariant=OK
+ROUND 41 | scoreSum=1312 | ledger=1312 | events=1312 | invariant=OK
+ROUND 42 | scoreSum=1344 | ledger=1344 | events=1344 | invariant=OK
+ROUND 43 | scoreSum=1376 | ledger=1376 | events=1376 | invariant=OK
+ROUND 44 | scoreSum=1408 | ledger=1408 | events=1408 | invariant=OK
+ROUND 45 | scoreSum=1440 | ledger=1440 | events=1440 | invariant=OK
+ROUND 46 | scoreSum=1472 | ledger=1472 | events=1472 | invariant=OK
+ROUND 47 | scoreSum=1504 | ledger=1504 | events=1504 | invariant=OK
+ROUND 48 | scoreSum=1536 | ledger=1536 | events=1536 | invariant=OK
+ROUND 49 | scoreSum=1568 | ledger=1568 | events=1568 | invariant=OK
+ROUND 50 | scoreSum=1600 | ledger=1600 | events=1600 | invariant=OK
+ROUND 51 | scoreSum=1632 | ledger=1632 | events=1632 | invariant=OK
+ROUND 52 | scoreSum=1664 | ledger=1664 | events=1664 | invariant=OK
+ROUND 53 | scoreSum=1696 | ledger=1696 | events=1696 | invariant=OK
+ROUND 54 | scoreSum=1728 | ledger=1728 | events=1728 | invariant=OK
+ROUND 55 | scoreSum=1760 | ledger=1760 | events=1760 | invariant=OK
+ROUND 56 | scoreSum=1792 | ledger=1792 | events=1792 | invariant=OK
+ROUND 57 | scoreSum=1824 | ledger=1824 | events=1824 | invariant=OK
+ROUND 58 | scoreSum=1856 | ledger=1856 | events=1856 | invariant=OK
+ROUND 59 | scoreSum=1888 | ledger=1888 | events=1888 | invariant=OK
+ROUND 60 | scoreSum=1920 | ledger=1920 | events=1920 | invariant=OK
+ROUND 61 | scoreSum=1952 | ledger=1952 | events=1952 | invariant=OK
+ROUND 62 | scoreSum=1984 | ledger=1984 | events=1984 | invariant=OK
+ROUND 63 | scoreSum=2016 | ledger=2016 | events=2016 | invariant=OK
+ROUND 64 | scoreSum=2048 | ledger=2048 | events=2048 | invariant=OK
+ROUND 65 | scoreSum=2080 | ledger=2080 | events=2080 | invariant=OK
+ROUND 66 | scoreSum=2112 | ledger=2112 | events=2112 | invariant=OK
+ROUND 67 | scoreSum=2144 | ledger=2144 | events=2144 | invariant=OK
+ROUND 68 | scoreSum=2176 | ledger=2176 | events=2176 | invariant=OK
+ROUND 69 | scoreSum=2208 | ledger=2208 | events=2208 | invariant=OK
+ROUND 70 | scoreSum=2240 | ledger=2240 | events=2240 | invariant=OK
+ROUND 71 | scoreSum=2272 | ledger=2272 | events=2272 | invariant=OK
+ROUND 72 | scoreSum=2304 | ledger=2304 | events=2304 | invariant=OK
+ROUND 73 | scoreSum=2336 | ledger=2336 | events=2336 | invariant=OK
+ROUND 74 | scoreSum=2368 | ledger=2368 | events=2368 | invariant=OK
+ROUND 75 | scoreSum=2400 | ledger=2400 | events=2400 | invariant=OK
+ROUND 76 | scoreSum=2432 | ledger=2432 | events=2432 | invariant=OK
+ROUND 77 | scoreSum=2464 | ledger=2464 | events=2464 | invariant=OK
+ROUND 78 | scoreSum=2496 | ledger=2496 | events=2496 | invariant=OK
+ROUND 79 | scoreSum=2528 | ledger=2528 | events=2528 | invariant=OK
+ROUND 80 | scoreSum=2560 | ledger=2560 | events=2560 | invariant=OK
+ROUND 81 | scoreSum=2592 | ledger=2592 | events=2592 | invariant=OK
+ROUND 82 | scoreSum=2624 | ledger=2624 | events=2624 | invariant=OK
+ROUND 83 | scoreSum=2656 | ledger=2656 | events=2656 | invariant=OK
+ROUND 84 | scoreSum=2688 | ledger=2688 | events=2688 | invariant=OK
+ROUND 85 | scoreSum=2720 | ledger=2720 | events=2720 | invariant=OK
+ROUND 86 | scoreSum=2752 | ledger=2752 | events=2752 | invariant=OK
+ROUND 87 | scoreSum=2784 | ledger=2784 | events=2784 | invariant=OK
+ROUND 88 | scoreSum=2816 | ledger=2816 | events=2816 | invariant=OK
+ROUND 89 | scoreSum=2848 | ledger=2848 | events=2848 | invariant=OK
+ROUND 90 | scoreSum=2880 | ledger=2880 | events=2880 | invariant=OK
+ROUND 91 | scoreSum=2912 | ledger=2912 | events=2912 | invariant=OK
+ROUND 92 | scoreSum=2944 | ledger=2944 | events=2944 | invariant=OK
+ROUND 93 | scoreSum=2976 | ledger=2976 | events=2976 | invariant=OK
+ROUND 94 | scoreSum=3008 | ledger=3008 | events=3008 | invariant=OK
+ROUND 95 | scoreSum=3040 | ledger=3040 | events=3040 | invariant=OK
+ROUND 96 | scoreSum=3072 | ledger=3072 | events=3072 | invariant=OK
+ROUND 97 | scoreSum=3104 | ledger=3104 | events=3104 | invariant=OK
+ROUND 98 | scoreSum=3136 | ledger=3136 | events=3136 | invariant=OK
+ROUND 99 | scoreSum=3168 | ledger=3168 | events=3168 | invariant=OK
+ROUND 100 | scoreSum=3200 | ledger=3200 | events=3200 | invariant=OK
+
+=== RELIC RUSH - FINAL SCORE ===
+adventurer-1      100 relics
+adventurer-2      100 relics
+adventurer-3      100 relics
+adventurer-4      100 relics
+adventurer-5      100 relics
+adventurer-6      100 relics
+adventurer-7      100 relics
+adventurer-8      100 relics
+adventurer-9      100 relics
+adventurer-10     100 relics
+adventurer-11     100 relics
+adventurer-12     100 relics
+adventurer-13     100 relics
+adventurer-14     100 relics
+adventurer-15     100 relics
+adventurer-16     100 relics
+adventurer-17     100 relics
+adventurer-18     100 relics
+adventurer-19     100 relics
+adventurer-20     100 relics
+adventurer-21     100 relics
+adventurer-22     100 relics
+adventurer-23     100 relics
+adventurer-24     100 relics
+adventurer-25     100 relics
+adventurer-26     100 relics
+adventurer-27     100 relics
+adventurer-28     100 relics
+adventurer-29     100 relics
+adventurer-30     100 relics
+adventurer-31     100 relics
+adventurer-32     100 relics
+Total by players : 3200
+Ledger total     : 3200
+Ledger events    : 3200
+
+**Evidencia de ejecución (configuración 128 / 8 / 100):**
+java -cp target/classes edu.eci.arsw.relicrush.app.InvariantProbe 128 8 100
+ROUND 01 | scoreSum=128 | ledger=128 | events=128 | invariant=OK
+ROUND 02 | scoreSum=256 | ledger=256 | events=256 | invariant=OK
+ROUND 03 | scoreSum=384 | ledger=384 | events=384 | invariant=OK
+ROUND 04 | scoreSum=512 | ledger=512 | events=512 | invariant=OK
+ROUND 05 | scoreSum=640 | ledger=640 | events=640 | invariant=OK
+ROUND 06 | scoreSum=768 | ledger=768 | events=768 | invariant=OK
+ROUND 07 | scoreSum=896 | ledger=896 | events=896 | invariant=OK
+ROUND 08 | scoreSum=1024 | ledger=1024 | events=1024 | invariant=OK
+ROUND 09 | scoreSum=1152 | ledger=1152 | events=1152 | invariant=OK
+ROUND 10 | scoreSum=1280 | ledger=1280 | events=1280 | invariant=OK
+ROUND 11 | scoreSum=1408 | ledger=1408 | events=1408 | invariant=OK
+ROUND 12 | scoreSum=1536 | ledger=1536 | events=1536 | invariant=OK
+ROUND 13 | scoreSum=1664 | ledger=1664 | events=1664 | invariant=OK
+ROUND 14 | scoreSum=1792 | ledger=1792 | events=1792 | invariant=OK
+ROUND 15 | scoreSum=1920 | ledger=1920 | events=1920 | invariant=OK
+ROUND 16 | scoreSum=2048 | ledger=2048 | events=2048 | invariant=OK
+ROUND 17 | scoreSum=2176 | ledger=2176 | events=2176 | invariant=OK
+ROUND 18 | scoreSum=2304 | ledger=2304 | events=2304 | invariant=OK
+ROUND 19 | scoreSum=2432 | ledger=2432 | events=2432 | invariant=OK
+ROUND 20 | scoreSum=2560 | ledger=2560 | events=2560 | invariant=OK
+ROUND 21 | scoreSum=2688 | ledger=2688 | events=2688 | invariant=OK
+ROUND 22 | scoreSum=2816 | ledger=2816 | events=2816 | invariant=OK
+ROUND 23 | scoreSum=2944 | ledger=2944 | events=2944 | invariant=OK
+ROUND 24 | scoreSum=3072 | ledger=3072 | events=3072 | invariant=OK
+ROUND 25 | scoreSum=3200 | ledger=3200 | events=3200 | invariant=OK
+ROUND 26 | scoreSum=3328 | ledger=3328 | events=3328 | invariant=OK
+ROUND 27 | scoreSum=3456 | ledger=3456 | events=3456 | invariant=OK
+ROUND 28 | scoreSum=3584 | ledger=3584 | events=3584 | invariant=OK
+ROUND 29 | scoreSum=3712 | ledger=3712 | events=3712 | invariant=OK
+ROUND 30 | scoreSum=3840 | ledger=3840 | events=3840 | invariant=OK
+ROUND 31 | scoreSum=3968 | ledger=3968 | events=3968 | invariant=OK
+ROUND 32 | scoreSum=4096 | ledger=4096 | events=4096 | invariant=OK
+ROUND 33 | scoreSum=4224 | ledger=4224 | events=4224 | invariant=OK
+ROUND 34 | scoreSum=4352 | ledger=4352 | events=4352 | invariant=OK
+ROUND 35 | scoreSum=4480 | ledger=4480 | events=4480 | invariant=OK
+ROUND 36 | scoreSum=4608 | ledger=4608 | events=4608 | invariant=OK
+ROUND 37 | scoreSum=4736 | ledger=4736 | events=4736 | invariant=OK
+ROUND 38 | scoreSum=4864 | ledger=4864 | events=4864 | invariant=OK
+ROUND 39 | scoreSum=4992 | ledger=4992 | events=4992 | invariant=OK
+ROUND 40 | scoreSum=5120 | ledger=5120 | events=5120 | invariant=OK
+ROUND 41 | scoreSum=5248 | ledger=5248 | events=5248 | invariant=OK
+ROUND 42 | scoreSum=5376 | ledger=5376 | events=5376 | invariant=OK
+ROUND 43 | scoreSum=5504 | ledger=5504 | events=5504 | invariant=OK
+ROUND 44 | scoreSum=5632 | ledger=5632 | events=5632 | invariant=OK
+ROUND 45 | scoreSum=5760 | ledger=5760 | events=5760 | invariant=OK
+ROUND 46 | scoreSum=5888 | ledger=5888 | events=5888 | invariant=OK
+ROUND 47 | scoreSum=6016 | ledger=6016 | events=6016 | invariant=OK
+ROUND 48 | scoreSum=6144 | ledger=6144 | events=6144 | invariant=OK
+ROUND 49 | scoreSum=6272 | ledger=6272 | events=6272 | invariant=OK
+ROUND 50 | scoreSum=6400 | ledger=6400 | events=6400 | invariant=OK
+ROUND 51 | scoreSum=6528 | ledger=6528 | events=6528 | invariant=OK
+ROUND 52 | scoreSum=6656 | ledger=6656 | events=6656 | invariant=OK
+ROUND 53 | scoreSum=6784 | ledger=6784 | events=6784 | invariant=OK
+ROUND 54 | scoreSum=6912 | ledger=6912 | events=6912 | invariant=OK
+ROUND 55 | scoreSum=7040 | ledger=7040 | events=7040 | invariant=OK
+ROUND 56 | scoreSum=7168 | ledger=7168 | events=7168 | invariant=OK
+ROUND 57 | scoreSum=7296 | ledger=7296 | events=7296 | invariant=OK
+ROUND 58 | scoreSum=7424 | ledger=7424 | events=7424 | invariant=OK
+ROUND 59 | scoreSum=7552 | ledger=7552 | events=7552 | invariant=OK
+ROUND 60 | scoreSum=7680 | ledger=7680 | events=7680 | invariant=OK
+ROUND 61 | scoreSum=7808 | ledger=7808 | events=7808 | invariant=OK
+ROUND 62 | scoreSum=7936 | ledger=7936 | events=7936 | invariant=OK
+ROUND 63 | scoreSum=8064 | ledger=8064 | events=8064 | invariant=OK
+ROUND 64 | scoreSum=8192 | ledger=8192 | events=8192 | invariant=OK
+ROUND 65 | scoreSum=8320 | ledger=8320 | events=8320 | invariant=OK
+ROUND 66 | scoreSum=8448 | ledger=8448 | events=8448 | invariant=OK
+ROUND 67 | scoreSum=8576 | ledger=8576 | events=8576 | invariant=OK
+ROUND 68 | scoreSum=8704 | ledger=8704 | events=8704 | invariant=OK
+ROUND 69 | scoreSum=8832 | ledger=8832 | events=8832 | invariant=OK
+ROUND 70 | scoreSum=8960 | ledger=8960 | events=8960 | invariant=OK
+ROUND 71 | scoreSum=9088 | ledger=9088 | events=9088 | invariant=OK
+ROUND 72 | scoreSum=9216 | ledger=9216 | events=9216 | invariant=OK
+ROUND 73 | scoreSum=9344 | ledger=9344 | events=9344 | invariant=OK
+ROUND 74 | scoreSum=9472 | ledger=9472 | events=9472 | invariant=OK
+ROUND 75 | scoreSum=9600 | ledger=9600 | events=9600 | invariant=OK
+ROUND 76 | scoreSum=9728 | ledger=9728 | events=9728 | invariant=OK
+ROUND 77 | scoreSum=9856 | ledger=9856 | events=9856 | invariant=OK
+ROUND 78 | scoreSum=9984 | ledger=9984 | events=9984 | invariant=OK
+ROUND 79 | scoreSum=10112 | ledger=10112 | events=10112 | invariant=OK
+ROUND 80 | scoreSum=10240 | ledger=10240 | events=10240 | invariant=OK
+ROUND 81 | scoreSum=10368 | ledger=10368 | events=10368 | invariant=OK
+ROUND 82 | scoreSum=10496 | ledger=10496 | events=10496 | invariant=OK
+ROUND 83 | scoreSum=10624 | ledger=10624 | events=10624 | invariant=OK
+ROUND 84 | scoreSum=10752 | ledger=10752 | events=10752 | invariant=OK
+ROUND 85 | scoreSum=10880 | ledger=10880 | events=10880 | invariant=OK
+ROUND 86 | scoreSum=11008 | ledger=11008 | events=11008 | invariant=OK
+ROUND 87 | scoreSum=11136 | ledger=11136 | events=11136 | invariant=OK
+ROUND 88 | scoreSum=11264 | ledger=11264 | events=11264 | invariant=OK
+ROUND 89 | scoreSum=11392 | ledger=11392 | events=11392 | invariant=OK
+ROUND 90 | scoreSum=11520 | ledger=11520 | events=11520 | invariant=OK
+ROUND 91 | scoreSum=11648 | ledger=11648 | events=11648 | invariant=OK
+ROUND 92 | scoreSum=11776 | ledger=11776 | events=11776 | invariant=OK
+ROUND 93 | scoreSum=11904 | ledger=11904 | events=11904 | invariant=OK
+ROUND 94 | scoreSum=12032 | ledger=12032 | events=12032 | invariant=OK
+ROUND 95 | scoreSum=12160 | ledger=12160 | events=12160 | invariant=OK
+ROUND 96 | scoreSum=12288 | ledger=12288 | events=12288 | invariant=OK
+ROUND 97 | scoreSum=12416 | ledger=12416 | events=12416 | invariant=OK
+ROUND 98 | scoreSum=12544 | ledger=12544 | events=12544 | invariant=OK
+ROUND 99 | scoreSum=12672 | ledger=12672 | events=12672 | invariant=OK
+ROUND 100 | scoreSum=12800 | ledger=12800 | events=12800 | invariant=OK
+
+=== RELIC RUSH - FINAL SCORE ===
+adventurer-1      100 relics
+adventurer-2      100 relics
+adventurer-3      100 relics
+adventurer-4      100 relics
+adventurer-5      100 relics
+adventurer-6      100 relics
+adventurer-7      100 relics
+adventurer-8      100 relics
+adventurer-9      100 relics
+adventurer-10     100 relics
+adventurer-11     100 relics
+adventurer-12     100 relics
+adventurer-13     100 relics
+adventurer-14     100 relics
+adventurer-15     100 relics
+adventurer-16     100 relics
+adventurer-17     100 relics
+adventurer-18     100 relics
+adventurer-19     100 relics
+adventurer-20     100 relics
+adventurer-21     100 relics
+adventurer-22     100 relics
+adventurer-23     100 relics
+adventurer-24     100 relics
+adventurer-25     100 relics
+adventurer-26     100 relics
+adventurer-27     100 relics
+adventurer-28     100 relics
+adventurer-29     100 relics
+adventurer-30     100 relics
+adventurer-31     100 relics
+adventurer-32     100 relics
+adventurer-33     100 relics
+adventurer-34     100 relics
+adventurer-35     100 relics
+adventurer-36     100 relics
+adventurer-37     100 relics
+adventurer-38     100 relics
+adventurer-39     100 relics
+adventurer-40     100 relics
+adventurer-41     100 relics
+adventurer-42     100 relics
+adventurer-43     100 relics
+adventurer-44     100 relics
+adventurer-45     100 relics
+adventurer-46     100 relics
+adventurer-47     100 relics
+adventurer-48     100 relics
+adventurer-49     100 relics
+adventurer-50     100 relics
+adventurer-51     100 relics
+adventurer-52     100 relics
+adventurer-53     100 relics
+adventurer-54     100 relics
+adventurer-55     100 relics
+adventurer-56     100 relics
+adventurer-57     100 relics
+adventurer-58     100 relics
+adventurer-59     100 relics
+adventurer-60     100 relics
+adventurer-61     100 relics
+adventurer-62     100 relics
+adventurer-63     100 relics
+adventurer-64     100 relics
+adventurer-65     100 relics
+adventurer-66     100 relics
+adventurer-67     100 relics
+adventurer-68     100 relics
+adventurer-69     100 relics
+adventurer-70     100 relics
+adventurer-71     100 relics
+adventurer-72     100 relics
+adventurer-73     100 relics
+adventurer-74     100 relics
+adventurer-75     100 relics
+adventurer-76     100 relics
+adventurer-77     100 relics
+adventurer-78     100 relics
+adventurer-79     100 relics
+adventurer-80     100 relics
+adventurer-81     100 relics
+adventurer-82     100 relics
+adventurer-83     100 relics
+adventurer-84     100 relics
+adventurer-85     100 relics
+adventurer-86     100 relics
+adventurer-87     100 relics
+adventurer-88     100 relics
+adventurer-89     100 relics
+adventurer-90     100 relics
+adventurer-91     100 relics
+adventurer-92     100 relics
+adventurer-93     100 relics
+adventurer-94     100 relics
+adventurer-95     100 relics
+adventurer-96     100 relics
+adventurer-97     100 relics
+adventurer-98     100 relics
+adventurer-99     100 relics
+adventurer-100    100 relics
+adventurer-101    100 relics
+adventurer-102    100 relics
+adventurer-103    100 relics
+adventurer-104    100 relics
+adventurer-105    100 relics
+adventurer-106    100 relics
+adventurer-107    100 relics
+adventurer-108    100 relics
+adventurer-109    100 relics
+adventurer-110    100 relics
+adventurer-111    100 relics
+adventurer-112    100 relics
+adventurer-113    100 relics
+adventurer-114    100 relics
+adventurer-115    100 relics
+adventurer-116    100 relics
+adventurer-117    100 relics
+adventurer-118    100 relics
+adventurer-119    100 relics
+adventurer-120    100 relics
+adventurer-121    100 relics
+adventurer-122    100 relics
+adventurer-123    100 relics
+adventurer-124    100 relics
+adventurer-125    100 relics
+adventurer-126    100 relics
+adventurer-127    100 relics
+adventurer-128    100 relics
+Total by players : 12800
+Ledger total     : 12800
+Ledger events    : 12800
+
 
 ## 6. Architectural trade-offs
 
