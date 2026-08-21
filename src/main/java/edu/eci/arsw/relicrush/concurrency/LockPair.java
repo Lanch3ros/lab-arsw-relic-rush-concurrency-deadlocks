@@ -17,14 +17,20 @@ public final class LockPair {
         // TODO LAB 3: This acquisition strategy can create circular wait.
         // Fix it using a deterministic ordering strategy (or justify another
         // deadlock-prevention approach) while preserving fine-grained locking.
+        if (first.id() < second.id()) {
         synchronized (first) {
-            // This small delay makes the deadlock easier to reproduce in the starter.
-            sleepQuietly(2);
             synchronized (second) {
                 action.run();
             }
         }
+    } else {
+        synchronized (second) {
+            synchronized (first) {
+                action.run();
+            }
+        }
     }
+}
 
     private static void sleepQuietly(long millis) {
         try {
