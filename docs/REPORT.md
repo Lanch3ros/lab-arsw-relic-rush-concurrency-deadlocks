@@ -1200,16 +1200,26 @@ Total by players : 12800
 Ledger total     : 12800
 Ledger events    : 12800
 
-
 ## 6. Architectural trade-offs
 
 Discuss:
 
 - Correctness / reliability
-- Performance / throughput
+The solution is robust because it ensures data integrity through two levels of protection:
+1. `synchronized` in `ForgeLedger` to ensure the atomicity of updates.
+2. Global sorting in `LockPair` to eliminate the possibility of deadlocks, ensuring that the game never stops. The system is deterministic.
+
+- Performance / Throughput
+By using fine-grained locking on each `ForgeStation`, we maximize parallelism. Only adventurers competing for the same specific tool need to wait, while the rest of the system continues to operate at full capacity.
+
 - Contention
+Contention is strictly limited to the `ForgeStations`. We eliminate any global contention points, ensuring that the ledger (`ForgeLedger`) does not become a bottleneck, since the locking time there is minimal (just an increment and an `add`).
+
 - Maintainability
+The sorting rule by `id()` is explicit and straightforward. It requires no complex configurations or additional maintenance if the number of stations increases. It is a low-cognitive-cost solution for any future developer.
+
 - Scalability
+The system is highly scalable. The cost of sorting two integers (the `id`s) is negligible compared to the work of the forge. The system will maintain its performance even with a large number of players, provided the ratio of available stations is adequate.
 
 ## 7. Mini ADR
 
