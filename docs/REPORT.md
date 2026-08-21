@@ -1224,17 +1224,30 @@ The system is highly scalable. The cost of sorting two integers (the `id`s) is n
 ## 7. Mini ADR
 
 ### Context
+The game “Relic Rush” uses concurrent threads (platform threads) that compete to acquire two exclusive resources (`ForgeStation`) using the `LockPair` class. The initial implementation acquired the locks in the order provided by the caller, which created a deterministic risk of circular waiting and deadlocks in the execution rounds.
 
 ### Decision
+Implement a global sorting rule based on the unique identifier (`id()`) of each `ForgeStation` within the `LockPair` class. Regardless of the order in which the adventurer requests the tools, the system always evaluates and acquires the resource with the lowest ID first.
 
 ### Alternatives considered
+1. **A single global lock:** Rejected because it destroys the game's concurrency, turning execution into a sequential process and violating the lab's restrictions.
+2. **Use of timeouts with `tryLock()`:** Discarded because Java’s native `synchronized` blocks do not support timeouts, and this would require migrating to the `Lock` API in `java.util.concurrent`, unnecessarily altering the base design.
 
 ### Consequences
+ Fine-grained locking is preserved, allowing threads using different stations to work in parallel.
+- **Reliability:** The risk of deadlock is completely eliminated, ensuring that games end successfully.
 
 ### Evidence
+Running `DeadlockProbe` and the stress tests (`InvariantProbe`) with up to 128 players confirms zero deadlocks and compliance with the invariant in all rounds.
+
+## Consequences
+The circular wait is eliminated, breaking one of Coffman’s conditions. The code maintains low coupling and high maintainability.
+
+## Risks
+None significant, since integer comparison is a constant-time operation with no impact on overall performance.
 
 ## 8. Conclusions
 
-1.
-2.
-3.
+1. **Barrier-based coordination (`CyclicBarrier`) is essential:** It allows tasks to be synchronized and ensures observation windows without resorting to arbitrary timeouts (`Thread.sleep`), guaranteeing data visibility between threads according to the Java Memory Model.
+2. **Shared state protection prevents silent data loss:** The use of appropriate mutual exclusion mechanisms in structures such as `ForgeLedger` ensures that counters and concurrent collections keep system invariants intact under high load.
+3. **Resource ordering eliminates deadlocks without sacrificing concurrency:** Breaking the circular wait condition through a deterministic acquisition rule (by ID) allows for a fine-grained model, resulting in a reliable, efficient, and highly scalable concurrent system.
