@@ -723,20 +723,32 @@ defect is the *absence of a global ordering rule* over the monitors it acquires.
 
 ### 4.2 Coffman conditions in Relic Rush
 
-- Mutual exclusion:
-- Hold and wait:
-- No preemption:
-- Circular wait:
+- Mutual exclusion: This is demonstrated by the use of the `synchronized (first)` and `synchronized (second)` blocks in the `LockPair` class. Java's native monitors ensure that only one thread (the “adventurer”) can acquire and hold the monitor for a specific `ForgeStation` at any given time, excluding all others.
+- Hold and wait: This occurs when `synchronized` blocks are nested. Since the block containing the second lock is nested inside the first block, the thread does not release the first lock until it reaches the closing statement. Because the thread requests the second lock before reaching the closing statement of the first lock, it is forced to hold the first lock while waiting for the second.
+- No preemption: The use of native `synchronized` blocks in Java does not allow for preemption. The Java Virtual Machine (JVM) has no mechanism for forced interruption or “timeout” to remove the monitor from a thread. The thread will only voluntarily release the first lock when it finishes execution (reaching the exit lock), which means that if it becomes blocked while waiting for a second lock, it will hold onto the first one indefinitely without the system being able to intervene.
+- Circular wait: This occurs because the LockPair class locks the monitors in the exact order in which they are requested by each adventurer. It is possible for Adventurer A to acquire Station 1 and wait for Station 2, while simultaneously Adventurer B acquires Station 2 and waits for Station 1. This creates a cycle of cross-dependencies where each thread waits indefinitely for a resource that the other thread is holding.
 
 ### 4.3 Wait-for graph
 
-Describe or add a diagram.
+Adventurer A needs the Anvil (passes it first) and the Furnace (passes it second).
+Adventurer B needs the Furnace (passes it first) and the Anvil (passes it second).
+
+The following diagram illustrates the cycle of cross-dependencies evident in the threads (section 4.1):
+
+[Adventurer A] ------ (waits for) -----> [Dragon Furnace]
+      ^                                          |
+      |                                          |
+  (holds)                                  (holds)
+      |                                          v
+[Arcane Anvil] <----- (waits for) ------ [Adventurer B]
 
 ### 4.4 Fix
 
 What condition did you break?
+We broke the Circular Wait condition. We achieved this by enforcing a strict global ordering rule in the LockPair class. Regardless of the order in which the adventurer requests the stations, the internal code always determines which station is “less” (for example, by comparing their unique IDs or names) and locks that one first. By forcing all threads to request resources in the same order, it is impossible for cross-dependency cycles to form.
 
 How did you preserve concurrency between independent forge operations?
+We maintained concurrency by using fine-grained locking specific to each ForgeStation, rather than using a single global lock for the entire game. This means that if Adventurer A is using the Anvil and the Hammer, Adventurer B can forge simultaneously as long as they use completely different resources. They only block each other if they try to use the same tool at the same time.
 
 ## 5. Verification
 
