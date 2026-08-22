@@ -2,10 +2,12 @@ package edu.eci.arsw.relicrush.game;
 
 import edu.eci.arsw.relicrush.concurrency.ForgeLedger;
 import edu.eci.arsw.relicrush.model.ForgeStation;
+import edu.eci.arsw.relicrush.model.RoundSnapshot;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.lang.management.ManagementFactory;
@@ -17,6 +19,7 @@ public final class GameEngine {
     private final ForgeLedger ledger = new ForgeLedger();
     private final List<ForgeStation> stations;
     private final List<Adventurer> adventurers = new ArrayList<>();
+    private final List<GameListener> listeners = new ArrayList<>();
     private final CyclicBarrier roundStart;
     private final CyclicBarrier roundEnd;
     private final AtomicBoolean finished = new AtomicBoolean(false);
@@ -38,6 +41,22 @@ public final class GameEngine {
         }
     }
 
+    /**
+     * Registers a viewer. Must be called before {@link #run()}; the listener
+     * list is not modified once the game starts, so it needs no locking.
+     */
+    public void addListener(GameListener listener) {
+        listeners.add(listener);
+    }
+
+    public List<ForgeStation> stations() {
+        return stations;
+    }
+
+    public GameConfig config() {
+        return config;
+    }
+
     public void run() throws InterruptedException, BrokenBarrierException {
         startDeadlockWatchdog();
         adventurers.forEach(Thread::start);
@@ -49,7 +68,10 @@ public final class GameEngine {
             // Scenario 3: coordinator waits until every worker completes the round.
             roundEnd.await();
 
-            printRoundSnapshot(round);
+            RoundSnapshot snapshot = buildSnapshot(round);
+            for (GameListener listener : listeners) {
+                listener.onRoundCompleted(snapshot);
+            }
         }
 
         for (Adventurer adventurer : adventurers) {
@@ -57,7 +79,26 @@ public final class GameEngine {
         }
 
         finished.set(true);
-        printFinalSummary();
+        RoundSnapshot finalSnapshot = buildSnapshot(config.rounds());
+        for (GameListener listener : listeners) {
+            listener.onGameFinished(finalSnapshot);
+        }
+    }
+
+    /**
+     * Safe to call only where the barriers guarantee no adventurer is writing:
+     * after roundEnd, or after all adventurers have been joined.
+     */
+    private RoundSnapshot buildSnapshot(int round) {
+        Map<String, Integer> scores = new LinkedHashMap<>();
+        for (Adventurer adventurer : adventurers) {
+            scores.put(adventurer.getName(), adventurer.score());
+        }
+        return new RoundSnapshot(
+                round,
+                java.util.Collections.unmodifiableMap(scores),
+                ledger.totalCrafted(),
+                ledger.eventCount());
     }
 
     private void startDeadlockWatchdog() {
@@ -81,32 +122,6 @@ public final class GameEngine {
         }, "deadlock-watchdog");
         watchdog.setDaemon(true);
         watchdog.start();
-    }
-
-    private void printRoundSnapshot(int round) {
-        int scoreSum = adventurers.stream().mapToInt(Adventurer::score).sum();
-        int ledgerTotal = ledger.totalCrafted();
-        int eventCount = ledger.eventCount();
-
-        System.out.printf(
-                "ROUND %02d | scoreSum=%d | ledger=%d | events=%d | invariant=%s%n",
-                round,
-                scoreSum,
-                ledgerTotal,
-                eventCount,
-                (scoreSum == ledgerTotal && ledgerTotal == eventCount) ? "OK" : "BROKEN");
-    }
-
-    private void printFinalSummary() {
-        System.out.println("\n=== RELIC RUSH - FINAL SCORE ===");
-        adventurers.stream()
-                .sorted(Comparator.comparingInt(Adventurer::score).reversed())
-                .forEach(a -> System.out.printf("%-16s %4d relics%n", a.getName(), a.score()));
-
-        int scoreSum = adventurers.stream().mapToInt(Adventurer::score).sum();
-        System.out.printf("Total by players : %d%n", scoreSum);
-        System.out.printf("Ledger total     : %d%n", ledger.totalCrafted());
-        System.out.printf("Ledger events    : %d%n", ledger.eventCount());
     }
 
     private static List<ForgeStation> createStations(int count) {
