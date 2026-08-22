@@ -1264,14 +1264,18 @@ The circular wait is eliminated, breaking one of Coffman’s conditions. The cod
 
 ### 9.1 What was built
 
-A Swing window (`RelicRushGuiMain`) that shows the game live and controls it:
+A Swing window (`RelicRushGuiMain`) that shows the match as a game scene: the
+forge stations form a ring, and each adventurer is a colored figure that walks
+to the two stations it used, connected to them by lines, with a spark while it
+crafts and its score at its feet. Idle adventurers wait at their home spots
+around the ring.
 
 | Requirement | Where it appears |
 |---|---|
-| Adventurers / players | scoreboard table, sorted by relics, updated every round |
-| Forge stations and their state | station list with a light per station: green = free, red = crafting, with the name of the thread using it |
-| Scores and crafted relics | scoreboard + the `scoreSum / ledger / events` status line |
-| Simulation state and invariants | status line (Ready / Running / Paused / Stopped / Finished) and an `invariant=OK` / `invariant=BROKEN` badge |
+| Adventurers / players | one colored figure per adventurer, with name and relic count ("A3 · 12") |
+| Forge stations and their state | ring of station cards: teal border = free, orange glow = used in the round on screen, red = held right now (with the holder's name) |
+| Scores and crafted relics | per-figure scores, the "Relics crafted" counter, and the `scoreSum / ledger / events` status line |
+| Simulation state and invariants | round counter, PAUSED / STOPPED / FINISHED overlays, and the `invariant=OK` / `invariant=BROKEN` badge |
 | Start / Pause / Resume / Stop | buttons, plus a round-delay slider that works while the game runs |
 
 To run it:
@@ -1288,7 +1292,9 @@ after every round to whoever subscribed (`GameListener`); the console output and
 the window are two subscribers of the same news. The engine does not know the
 GUI exists, and none of the game's synchronization was changed to support it:
 the barriers, the ledger lock and the station-ordering rule are exactly the ones
-verified in sections 2 to 5.
+verified in sections 2 to 5. The only engine change for the scene was additive:
+each `RoundSnapshot` now also carries the round's `ForgeEvent` entries, so a
+viewer can know who used which stations.
 
 Evidence that nothing moved: after the refactor, `InvariantProbe 8 6 50` output
 is **byte-for-byte identical** to the binary built from the commit before the GUI
@@ -1316,7 +1322,16 @@ Game threads never draw. The window follows three rules:
    adventurers, which exits them through the exception paths the starter
    already handled.
 
-### 9.4 Two deliberate design decisions
+### 9.4 Three deliberate design decisions
+
+**The scene replays the round the ledger recorded.** A craft holds its two
+stations for microseconds - far too fast for any animation to catch live, and
+slowing the crafts down with sleeps would change the very concurrency the lab
+measures. So after each round, the scene animates the `ForgeEvent` entries that
+round produced: who crafted, at which two stations. What you watch is real
+recorded history - the same events the invariant counts - not an invented
+animation. Live lock state is still shown on top: a station whose tag is set at
+paint time turns red with its owner's name.
 
 **Pause waits for the round boundary.** The pause button takes effect between
 rounds, never in the middle of a craft - and the status bar says so. Freezing a
@@ -1343,7 +1358,7 @@ The window was exercised by a driver that clicks the real buttons and reads the
 real labels:
 
 ```text
-after start: ROUND 12 | scoreSum=96 | ledger=96 | events=96
+after start: ROUND 13 | scoreSum=104 | ledger=104 | events=104
 rounds are flowing: true
 invariant shown OK: true
 frozen while paused: true (13 -> 13)

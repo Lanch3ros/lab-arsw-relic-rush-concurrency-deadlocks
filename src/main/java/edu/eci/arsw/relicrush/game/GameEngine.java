@@ -24,6 +24,8 @@ public final class GameEngine {
     private final CyclicBarrier roundEnd;
     private final AtomicBoolean finished = new AtomicBoolean(false);
     private final GameControls controls = new GameControls();
+    /** Coordinator-only: events already handed out in earlier snapshots. */
+    private int lastPublishedEvents = 0;
 
     public GameEngine(GameConfig config) {
         this.config = config;
@@ -130,11 +132,16 @@ public final class GameEngine {
         for (Adventurer adventurer : adventurers) {
             scores.put(adventurer.getName(), adventurer.score());
         }
+        List<edu.eci.arsw.relicrush.model.ForgeEvent> all = ledger.snapshot();
+        List<edu.eci.arsw.relicrush.model.ForgeEvent> fresh =
+                List.copyOf(all.subList(Math.min(lastPublishedEvents, all.size()), all.size()));
+        lastPublishedEvents = all.size();
         return new RoundSnapshot(
                 round,
                 java.util.Collections.unmodifiableMap(scores),
                 ledger.totalCrafted(),
-                ledger.eventCount());
+                ledger.eventCount(),
+                fresh);
     }
 
     private void startDeadlockWatchdog() {
