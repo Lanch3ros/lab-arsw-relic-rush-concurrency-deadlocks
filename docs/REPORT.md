@@ -9,7 +9,7 @@
 
 Repository: `https://github.com/Lanch3ros/lab-arsw-relic-rush-concurrency-deadlocks`
 
-Final commit: `TBD`
+Final commit: `93ea732`
 
 **Baseline environment**
 
