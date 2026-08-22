@@ -3,10 +3,14 @@ package edu.eci.arsw.relicrush.concurrency;
 import edu.eci.arsw.relicrush.model.ForgeStation;
 
 /**
- * Starter implementation intentionally contains a deadlock risk.
+ * Acquires the two forge stations needed by one craft operation.
  *
- * Students: do NOT replace this with one global lock. Preserve concurrency
- * between forge operations that use disjoint stations.
+ * Deadlock prevention: the monitors are always taken in ascending order of
+ * {@link ForgeStation#id()}, whatever order the caller asked for. Because every
+ * thread follows the same order, a circular wait cannot form.
+ *
+ * Locking stays fine-grained: adventurers working on disjoint stations never
+ * block each other, so this is not a global lock.
  */
 public final class LockPair {
 
@@ -14,29 +18,18 @@ public final class LockPair {
     }
 
     public static void withBoth(ForgeStation first, ForgeStation second, Runnable action) {
-        // TODO LAB 3: This acquisition strategy can create circular wait.
-        // Fix it using a deterministic ordering strategy (or justify another
-        // deadlock-prevention approach) while preserving fine-grained locking.
         if (first.id() < second.id()) {
-        synchronized (first) {
-            synchronized (second) {
-                action.run();
-            }
-        }
-    } else {
-        synchronized (second) {
             synchronized (first) {
-                action.run();
+                synchronized (second) {
+                    action.run();
+                }
             }
-        }
-    }
-}
-
-    private static void sleepQuietly(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } else {
+            synchronized (second) {
+                synchronized (first) {
+                    action.run();
+                }
+            }
         }
     }
 }

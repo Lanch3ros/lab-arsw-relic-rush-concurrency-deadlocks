@@ -735,17 +735,19 @@ Adventurer B needs the Furnace (passes it first) and the Anvil (passes it second
 
 The following diagram illustrates the cycle of cross-dependencies evident in the threads (section 4.1):
 
+```text
 [Adventurer A] ------ (waits for) -----> [Dragon Furnace]
       ^                                          |
       |                                          |
   (holds)                                  (holds)
       |                                          v
 [Arcane Anvil] <----- (waits for) ------ [Adventurer B]
+```
 
 ### 4.4 Fix
 
 What condition did you break?
-We broke the Circular Wait condition. We achieved this by enforcing a strict global ordering rule in the LockPair class. Regardless of the order in which the adventurer requests the stations, the internal code always determines which station is “less” (for example, by comparing their unique IDs or names) and locks that one first. By forcing all threads to request resources in the same order, it is impossible for cross-dependency cycles to form.
+We broke the Circular Wait condition. We achieved this by enforcing a strict global ordering rule in the LockPair class. Regardless of the order in which the adventurer requests the stations, the internal code always determines which station is “less” (by comparing their unique IDs) and locks that one first. By forcing all threads to request resources in the same order, it is impossible for cross-dependency cycles to form.
 
 How did you preserve concurrency between independent forge operations?
 We maintained concurrency by using fine-grained locking specific to each ForgeStation, rather than using a single global lock for the entire game. This means that if Adventurer A is using the Anvil and the Hammer, Adventurer B can forge simultaneously as long as they use completely different resources. They only block each other if they try to use the same tool at the same time.
@@ -758,7 +760,8 @@ We maintained concurrency by using fine-grained locking specific to each ForgeSt
 | 32 | 8 | 100 |No |Ok |
 | 128 | 8 | 100 |No |Ok |
 
-**Evidencia de ejecución (configuración 8 / 6 / 50):**
+**Execution evidence (configuration 8 / 6 / 50):**
+```text
 java -cp target/classes edu.eci.arsw.relicrush.app.InvariantProbe 8 6 50
 ROUND 01 | scoreSum=8 | ledger=8 | events=8 | invariant=OK
 ROUND 02 | scoreSum=16 | ledger=16 | events=16 | invariant=OK
@@ -823,8 +826,10 @@ adventurer-8       50 relics
 Total by players : 400
 Ledger total     : 400
 Ledger events    : 400
+```
 
-**Evidencia de ejecución (configuración 32 / 8 / 100):**
+**Execution evidence (configuration 32 / 8 / 100):**
+```text
 java -cp target/classes edu.eci.arsw.relicrush.app.InvariantProbe 32 8 100
 ROUND 01 | scoreSum=32 | ledger=32 | events=32 | invariant=OK
 ROUND 02 | scoreSum=64 | ledger=64 | events=64 | invariant=OK
@@ -963,8 +968,10 @@ adventurer-32     100 relics
 Total by players : 3200
 Ledger total     : 3200
 Ledger events    : 3200
+```
 
-**Evidencia de ejecución (configuración 128 / 8 / 100):**
+**Execution evidence (configuration 128 / 8 / 100):**
+```text
 java -cp target/classes edu.eci.arsw.relicrush.app.InvariantProbe 128 8 100
 ROUND 01 | scoreSum=128 | ledger=128 | events=128 | invariant=OK
 ROUND 02 | scoreSum=256 | ledger=256 | events=256 | invariant=OK
@@ -1199,10 +1206,9 @@ adventurer-128    100 relics
 Total by players : 12800
 Ledger total     : 12800
 Ledger events    : 12800
+```
 
 ## 6. Architectural trade-offs
-
-Discuss:
 
 - Correctness / reliability
 The solution is robust because it ensures data integrity through two levels of protection:
@@ -1234,17 +1240,18 @@ Implement a global sorting rule based on the unique identifier (`id()`) of each 
 2. **Use of timeouts with `tryLock()`:** Discarded because Java’s native `synchronized` blocks do not support timeouts, and this would require migrating to the `Lock` API in `java.util.concurrent`, unnecessarily altering the base design.
 
 ### Consequences
- Fine-grained locking is preserved, allowing threads using different stations to work in parallel.
+- **Performance:** Fine-grained locking is preserved, allowing threads using different stations to work in parallel.
 - **Reliability:** The risk of deadlock is completely eliminated, ensuring that games end successfully.
 
 ### Evidence
 Running `DeadlockProbe` and the stress tests (`InvariantProbe`) with up to 128 players confirms zero deadlocks and compliance with the invariant in all rounds.
 
-## Consequences
+### Risks
+None significant, since integer comparison is a constant-time operation with no impact on overall performance.
+
+### Summary
 The circular wait is eliminated, breaking one of Coffman’s conditions. The code maintains low coupling and high maintainability.
 
-## Risks
-None significant, since integer comparison is a constant-time operation with no impact on overall performance.
 
 ## 8. Conclusions
 
