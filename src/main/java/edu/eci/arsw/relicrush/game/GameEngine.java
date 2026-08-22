@@ -23,6 +23,7 @@ public final class GameEngine {
     private final CyclicBarrier roundStart;
     private final CyclicBarrier roundEnd;
     private final AtomicBoolean finished = new AtomicBoolean(false);
+    private final GameControls controls = new GameControls();
 
     public GameEngine(GameConfig config) {
         this.config = config;
@@ -49,6 +50,11 @@ public final class GameEngine {
         listeners.add(listener);
     }
 
+    /** Pause / resume / stop switch, shared with the UI. */
+    public GameControls controls() {
+        return controls;
+    }
+
     public List<ForgeStation> stations() {
         return stations;
     }
@@ -61,13 +67,27 @@ public final class GameEngine {
         startDeadlockWatchdog();
         adventurers.forEach(Thread::start);
 
+        int lastCompleted = 0;
         for (int round = 1; round <= config.rounds(); round++) {
+            // Pause / stop / pacing checkpoint. Runs while every adventurer is
+            // parked at roundStart, so nobody is mid-craft here.
+            if (!controls.awaitRoundGo()) {
+                stopAdventurers();
+                finished.set(true);
+                RoundSnapshot last = buildSnapshot(lastCompleted);
+                for (GameListener listener : listeners) {
+                    listener.onGameStopped(last);
+                }
+                return;
+            }
+
             // Scenario 2: workers wait until the coordinator starts the round.
             roundStart.await();
 
             // Scenario 3: coordinator waits until every worker completes the round.
             roundEnd.await();
 
+            lastCompleted = round;
             RoundSnapshot snapshot = buildSnapshot(round);
             for (GameListener listener : listeners) {
                 listener.onRoundCompleted(snapshot);
@@ -82,6 +102,22 @@ public final class GameEngine {
         RoundSnapshot finalSnapshot = buildSnapshot(config.rounds());
         for (GameListener listener : listeners) {
             listener.onGameFinished(finalSnapshot);
+        }
+    }
+
+    /**
+     * Stops the game via the exception paths the adventurers already handle:
+     * interruption makes a thread waiting at a barrier throw, and breaks that
+     * barrier for everyone else. No adventurer can be inside playTurn here
+     * (that requires the coordinator at roundStart), so no station monitor is
+     * held when the threads exit.
+     */
+    private void stopAdventurers() throws InterruptedException {
+        for (Adventurer adventurer : adventurers) {
+            adventurer.interrupt();
+        }
+        for (Adventurer adventurer : adventurers) {
+            adventurer.join();
         }
     }
 

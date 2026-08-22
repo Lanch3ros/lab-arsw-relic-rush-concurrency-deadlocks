@@ -15,4 +15,12 @@ public interface GameListener {
 
     /** Called once, after all adventurers have finished the last round. */
     void onGameFinished(RoundSnapshot finalSnapshot);
+
+    /**
+     * Called once if the game is stopped early via {@code GameControls.stop()}.
+     * The snapshot reflects the last fully completed round. Default is a
+     * no-op so console runs, which have no controls, are unaffected.
+     */
+    default void onGameStopped(RoundSnapshot lastSnapshot) {
+    }
 }
