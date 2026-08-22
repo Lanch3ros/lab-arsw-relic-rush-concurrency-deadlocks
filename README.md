@@ -426,3 +426,19 @@ coordination
 The objective is not merely to know `synchronized`.
 
 > **The objective is to design a concurrent solution whose correctness and liveness can be explained and demonstrated.**
+
+---
+
+# 20. Bonus: graphical interface (team addition)
+
+The lab's optional GUI bonus is implemented in `RelicRushGuiMain`:
+
+```bash
+java -cp target/classes edu.eci.arsw.relicrush.app.RelicRushGuiMain
+java -cp target/classes edu.eci.arsw.relicrush.app.RelicRushGuiMain 16 8 100
+```
+
+It shows adventurers, forge-station state, scores, simulation state and the
+round invariant, with Start / Pause / Resume / Stop controls and a speed
+slider. Design and verification are documented in `docs/REPORT.md`, section 9.
+The console entry points and all synchronization mechanisms are unchanged.

@@ -1,5 +1,6 @@
 package edu.eci.arsw.relicrush.app;
 
+import edu.eci.arsw.relicrush.game.ConsoleListener;
 import edu.eci.arsw.relicrush.game.GameConfig;
 import edu.eci.arsw.relicrush.game.GameEngine;
 
@@ -19,6 +20,8 @@ public final class RelicRushMain {
                 "Starting Relic Rush: adventurers=%d, stations=%d, rounds=%d%n",
                 config.adventurers(), config.stations(), config.rounds());
 
-        new GameEngine(config).run();
+        GameEngine engine = new GameEngine(config);
+        engine.addListener(new ConsoleListener());
+        engine.run();
     }
 }

@@ -1,5 +1,6 @@
 package edu.eci.arsw.relicrush.app;
 
+import edu.eci.arsw.relicrush.game.ConsoleListener;
 import edu.eci.arsw.relicrush.game.GameConfig;
 import edu.eci.arsw.relicrush.game.GameEngine;
 
@@ -14,6 +15,8 @@ public final class InvariantProbe {
         int players = args.length > 0 ? Integer.parseInt(args[0]) : 32;
         int stations = args.length > 1 ? Integer.parseInt(args[1]) : 8;
         int rounds = args.length > 2 ? Integer.parseInt(args[2]) : 100;
-        new GameEngine(new GameConfig(players, stations, rounds)).run();
+        GameEngine engine = new GameEngine(new GameConfig(players, stations, rounds));
+        engine.addListener(new ConsoleListener());
+        engine.run();
     }
 }

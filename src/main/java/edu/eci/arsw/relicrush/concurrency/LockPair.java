@@ -11,6 +11,10 @@ import edu.eci.arsw.relicrush.model.ForgeStation;
  *
  * Locking stays fine-grained: adventurers working on disjoint stations never
  * block each other, so this is not a global lock.
+ *
+ * The markHeld/markReleased calls only maintain the stations' observer tag for
+ * the GUI. They happen strictly inside the monitors this class already holds,
+ * touch no lock themselves, and do not alter the acquisition order.
  */
 public final class LockPair {
 
@@ -18,17 +22,23 @@ public final class LockPair {
     }
 
     public static void withBoth(ForgeStation first, ForgeStation second, Runnable action) {
-        if (first.id() < second.id()) {
-            synchronized (first) {
-                synchronized (second) {
-                    action.run();
+        ForgeStation low = first.id() < second.id() ? first : second;
+        ForgeStation high = first.id() < second.id() ? second : first;
+        String owner = Thread.currentThread().getName();
+
+        synchronized (low) {
+            low.markHeld(owner);
+            try {
+                synchronized (high) {
+                    high.markHeld(owner);
+                    try {
+                        action.run();
+                    } finally {
+                        high.markReleased();
+                    }
                 }
-            }
-        } else {
-            synchronized (second) {
-                synchronized (first) {
-                    action.run();
-                }
+            } finally {
+                low.markReleased();
             }
         }
     }

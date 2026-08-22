@@ -1258,3 +1258,102 @@ The circular wait is eliminated, breaking one of Coffman’s conditions. The cod
 1. **Barrier-based coordination (`CyclicBarrier`) is essential:** It allows tasks to be synchronized and ensures observation windows without resorting to arbitrary timeouts (`Thread.sleep`), guaranteeing data visibility between threads according to the Java Memory Model.
 2. **Shared state protection prevents silent data loss:** The use of appropriate mutual exclusion mechanisms in structures such as `ForgeLedger` ensures that counters and concurrent collections keep system invariants intact under high load.
 3. **Resource ordering eliminates deadlocks without sacrificing concurrency:** Breaking the circular wait condition through a deterministic acquisition rule (by ID) allows for a fine-grained model, resulting in a reliable, efficient, and highly scalable concurrent system.
+
+
+## 9. Bonus: graphical interface
+
+### 9.1 What was built
+
+A Swing window (`RelicRushGuiMain`) that shows the game live and controls it:
+
+| Requirement | Where it appears |
+|---|---|
+| Adventurers / players | scoreboard table, sorted by relics, updated every round |
+| Forge stations and their state | station list with a light per station: green = free, red = crafting, with the name of the thread using it |
+| Scores and crafted relics | scoreboard + the `scoreSum / ledger / events` status line |
+| Simulation state and invariants | status line (Ready / Running / Paused / Stopped / Finished) and an `invariant=OK` / `invariant=BROKEN` badge |
+| Start / Pause / Resume / Stop | buttons, plus a round-delay slider that works while the game runs |
+
+To run it:
+
+```bash
+java -cp target/classes edu.eci.arsw.relicrush.app.RelicRushGuiMain
+java -cp target/classes edu.eci.arsw.relicrush.app.RelicRushGuiMain 16 8 100
+```
+
+### 9.2 How it integrates without touching the concurrency
+
+The window is just **one more viewer**. The engine publishes a `RoundSnapshot`
+after every round to whoever subscribed (`GameListener`); the console output and
+the window are two subscribers of the same news. The engine does not know the
+GUI exists, and none of the game's synchronization was changed to support it:
+the barriers, the ledger lock and the station-ordering rule are exactly the ones
+verified in sections 2 to 5.
+
+Evidence that nothing moved: after the refactor, `InvariantProbe 8 6 50` output
+is **byte-for-byte identical** to the binary built from the commit before the GUI
+work, and `DeadlockProbe` stays clean (3/3 runs at every step).
+
+### 9.3 The concurrency rules the GUI must follow
+
+The GUI adds one genuinely new concurrency problem, and it is the one the bonus
+is graded on: **Swing only allows its own thread (the EDT) to touch the screen.**
+Game threads never draw. The window follows three rules:
+
+1. **Round news crosses threads through `SwingUtilities.invokeLater`.** Listener
+   callbacks arrive on the coordinator thread; the GUI hands the update over to
+   the Swing thread instead of touching components directly.
+2. **Station lights never touch a lock.** Each station carries a small tag
+   (`heldBy`) saying which thread is crafting there. `LockPair` writes the tag
+   while it already holds the station; the window reads it through an atomic
+   reference, without ever locking the station. This matters: a viewer that
+   synchronized on a station would become one more participant in the locking
+   that this lab spent Parts III-V getting right.
+3. **The buttons go through `GameControls`,** a small switch with its own
+   private lock (wait/notify, no sleep polling). Pause makes the coordinator not
+   show up for the next round; since a round cannot start without it, every
+   adventurer waits at the barrier that already existed. Stop interrupts the
+   adventurers, which exits them through the exception paths the starter
+   already handled.
+
+### 9.4 Two deliberate design decisions
+
+**Pause waits for the round boundary.** The pause button takes effect between
+rounds, never in the middle of a craft - and the status bar says so. Freezing a
+thread while it holds a forge station is exactly how you would create a new
+deadlock, so "pause instantly" would undo the lab. At the boundary, every
+adventurer is already waiting at the barrier and nobody holds anything.
+
+**The speed slider is pacing, not coordination.** The game finishes in about two
+seconds - too fast to watch. The slider adds a delay between rounds, applied
+while every adventurer is parked at the barrier anyway. Correctness never
+depends on it: at delay 0 the game is exactly as fast and as correct as the
+console version. This is the same distinction section 2.5 draws for the
+starter's own sleeps - sampling and pacing are legitimate; *establishing that
+another thread finished* by sleeping is not. Stop wakes the delay immediately,
+so the window never feels stuck.
+
+One consequence worth stating: **Start after Stop begins a new match.** Stopping
+a game ends its adventurer threads for good, so the Start button builds a fresh
+engine. That mirrors how the game is designed - one engine, one match.
+
+### 9.5 Verification
+
+The window was exercised by a driver that clicks the real buttons and reads the
+real labels:
+
+```text
+after start: ROUND 12 | scoreSum=96 | ledger=96 | events=96
+rounds are flowing: true
+invariant shown OK: true
+frozen while paused: true (13 -> 13)
+advanced after resume: true (13 -> 21)
+after stop: STOPPED at round 22 | scoreSum=176 | ledger=176 | events=176
+stopped cleanly: true
+adventurer threads alive after stop: 0 (0 expected)
+restart works, rounds flowing again: true
+```
+
+The stopped totals are exact (22 rounds x 8 players = 176 on all three
+counters), the pause genuinely froze the game, and stopping left zero
+adventurer threads behind.
